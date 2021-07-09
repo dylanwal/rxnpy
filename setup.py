@@ -1,8 +1,12 @@
 from setuptools import setup
 
 setup(
-    name="rxnpy",
-    version= "v0.0.1"
-    packages=find_packages(where='rxnpy'),
-    package_dir={"", "rxnpy"},
+    name='rxnpy',
+    version='0.0.1',
+    packages=[''],
+    url='https://github.com/dylanwal/rxnpy',
+    license='MIT License ',
+    author='Dylan',
+    author_email='',
+    description='Chemistry Stuff'
 )
