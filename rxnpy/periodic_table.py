@@ -125,6 +125,7 @@ elements = {
  'Zr': 'Zirconium'}
 
 
+
 def collapse_chemical_formula(chemical_formula):
     """
     Given a chemical formula return a collapsed version.
