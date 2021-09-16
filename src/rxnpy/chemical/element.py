@@ -16,3 +16,9 @@ class Element:
 
     def __repr__(self):
         return json.dumps(self.__dict__, indent=4, sort_keys=False)
+
+
+if __name__ == '__main__':
+    element = Element(1, "Hydrogen", "H", phase="gas", mp=13.99)
+    print(element)
+    print(repr(element))

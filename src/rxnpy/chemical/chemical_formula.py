@@ -12,6 +12,11 @@ class ChemicalFormula:
     periodic_table = PeriodicTable()
 
     def __init__(self, formula, order: list[str] = None):
+        """
+        Chemical formula
+        :param formula: chemical formula
+        :param order: order of chemical symbols; defaults to hill system; or auto-completes to alphabetical by symbol
+        """
         self._order = order
         self._formula = None
         self.formula = formula
@@ -30,9 +35,15 @@ class ChemicalFormula:
 
     @formula.setter
     def formula(self, formula):
-        self._formula, self._elements = self.reduce(formula)
+        if formula is not None:
+            self._formula, self._elements = self.reduce(formula)
 
     def reduce(self, formula: str) -> (str, dict[str, int]):
+        """
+        Reduces all chemical formulas to the same reduced version.
+        :param formula:
+        :return:
+        """
         split_formula = self._split_formula(formula)
         elements = self._split_formula_to_element_dict(split_formula)
         formula = self._element_to_formula(elements, self._order)
@@ -52,7 +63,7 @@ class ChemicalFormula:
         """
         Given a split chemical formula return a dictionary of elements.
         :param split_formula:
-        :return:
+        :return: {"element symbol": "count"} -> {"C": 1, "O": 2}
         """
         # put data into dictionary
         elements = {}
@@ -84,7 +95,7 @@ class ChemicalFormula:
 
     def _element_to_formula(self, elements: dict, order: list[str] = None) -> str:
         """
-        :param elements {"element symbol": int}
+        Converts element dictionary into a reduced string.
         """
         # Set order
         if order is None:
