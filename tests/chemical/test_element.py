@@ -1,6 +1,6 @@
 
 
-from src.rxnpy.chemical import Element
+from rxnpy.chemical import Element
 
 hydrogen = {
         "name": "Hydrogen",

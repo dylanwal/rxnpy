@@ -6,9 +6,9 @@ from random import randint
 data_labels = ["cid", "canonical_smiles", "molecular_formula", "iupac_name", "inchi", "inchikey", "synonyms"]
 stop = 6
 
-with open("chempub_list7.csv", "w") as f:
+with open("chempub_list000.csv", "w") as f:
     wr = csv.writer(f, quoting=csv.QUOTE_ALL)
-    for i in range(27108, 50_000, 1):
+    for i in range(1, 3, 1):
         flag = True
         ii = 0
         while flag:

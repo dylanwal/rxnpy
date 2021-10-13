@@ -2,7 +2,7 @@
 import json
 
 
-from chemical_formula import ChemicalFormula
+from molecular_formula import MolecularFormula
 from ingredient import Ingredient
 
 
@@ -12,7 +12,7 @@ class Chemical(Ingredient):
                  formula: str = None,
                  **kwargs):
 
-        self._formula_obj = ChemicalFormula(None, kwargs.pop("order") if "order" in kwargs.keys() else None)
+        self._formula_obj = MolecularFormula(None, kwargs.pop("order") if "order" in kwargs.keys() else None)
         self._formula = None
         self.formula = formula
 

@@ -4,11 +4,11 @@ import re
 from src.rxnpy.chemical.periodic_table import PeriodicTable
 
 
-class ChemicalFormulaError(Exception):
+class MolecularFormulaError(Exception):
     pass
 
 
-class ChemicalFormula:
+class MolecularFormula:
     periodic_table = PeriodicTable()
 
     def __init__(self, formula, order: list[str] = None):
@@ -70,7 +70,7 @@ class ChemicalFormula:
         for index, entry in enumerate(split_formula):
             if not entry.isnumeric():
                 if entry not in self.periodic_table.element_symbols:
-                    raise ChemicalFormulaError(f"Invalid symbol in chemical formula. Invalid: {entry}")
+                    raise MolecularFormulaError(f"Invalid symbol in chemical formula. Invalid: {entry}")
 
                 if entry in elements:
                     try:
@@ -129,11 +129,11 @@ class ChemicalFormula:
                 base.remove(k)
                 base.insert(0, k)
             else:
-                raise ChemicalFormulaError(f"Invalid symbol in 'order' for chemical formula. Invalid: {k}")
+                raise MolecularFormulaError(f"Invalid symbol in 'order' for chemical formula. Invalid: {k}")
 
         return base
 
 
 if __name__ == '__main__':
-    cf = ChemicalFormula("C1H3OH63Cr2CCCOOO")
+    cf = MolecularFormula("C1H3OH63Cr2CCCOOO")
     print(cf)

@@ -1,7 +1,7 @@
 
 import pytest
 
-from src.rxnpy.chemical import PeriodicTable, Element
+from rxnpy.chemical import PeriodicTable, Element
 
 
 @pytest.fixture
