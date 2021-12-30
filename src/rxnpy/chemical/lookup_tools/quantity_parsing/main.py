@@ -1,10 +1,10 @@
 from typing import List, Optional, Union
 
-from src.rxnpy import Unit, Quantity
-from pre_processing import substitution_main, _remove_string
-from multiple_quantity_finder import multiple_quantites_main
-from to_quantity import _to_quantity
-from post_processing import _remove_duplicates
+from rxnpy import Quantity
+from rxnpy.chemical.lookup_tools.quantity_parsing.pre_processing import substitution_main, _remove_string
+from rxnpy.chemical.lookup_tools.quantity_parsing.multiple_quantity_finder import multiple_quantities_main
+from rxnpy.chemical.lookup_tools.quantity_parsing.to_quantity import _to_quantity
+from rxnpy.chemical.lookup_tools.quantity_parsing.post_processing import _remove_duplicates
 
 
 def main_quantity_parse(text_in,
@@ -15,7 +15,7 @@ def main_quantity_parse(text_in,
         text_in = _remove_string(text_in, remove_string)
 
     text_in = substitution_main(text_in)
-    text_list = multiple_quantites_main(text_in)
+    text_list = multiple_quantities_main(text_in)
 
     out = []
     for text in text_list:
@@ -24,7 +24,8 @@ def main_quantity_parse(text_in,
             result = _to_quantity(subtext)
             if result is not None:
                 out_inner.append(result)
-        out.append(out_inner)
+        if out_inner:
+            out.append(out_inner)
 
     for _ in range(0, 2):
         if len(out) == 1:
@@ -38,8 +39,10 @@ def main_quantity_parse(text_in,
 if __name__ == "__main__":
     from testing_utils import _test_func
     examples = [
+        ["8.20x10+1 ppm; pure", Quantity("8.20*10**1 ppm")],
+        ["37.34 kJ/mole (at 25 °C)", [Quantity("37.34 kJ/mole"), Quantity("25 degC")]],
         ['40 °F (NTP, 1992)', Quantity("40 degF")],
-        ['4.0 °C (39.2 °F) - closed cup', Quantity("4 degC")],
+        ['4.0 °C (39.2 °F) - closed cup', [Quantity("4 degC")]],
         ['4.0 °C [39.2 g/[mol * s]] - closed cup', [Quantity("4 degC"), Quantity("39.2 g/(mol * s)")]],
         ['4.0 °C [39.2 g/[mol * s] approx.] - closed cup', [Quantity("4 degC"), Quantity("39.2 g/(mol * s)")]],
         ['4.0 °C [39.2g/[mol*s] approx.] - closed cup', [Quantity("4 degC"), Quantity("39.2 g/(mol * s)")]],
@@ -60,6 +63,7 @@ if __name__ == "__main__":
         ['5e1 g/mol',  Quantity('50 g/mol')],
         ['−66.11·10-62 cm3/mol',  Quantity('-66.11*10**-62 cm**3/mol')],
         ['−66.11·10+62 cm3/mol',  Quantity('-66.11*10**62 cm**3/mol')],
+        ['−66.11·1062 cm3/mol', Quantity('-66.11*10**62 cm**3/mol')],
         ['-14.390 BTU/LB= -7992 CAL/G= -334.6X10+5 J/KG', Quantity('-14.390 BTU/lb')],
 
         ['Sound travels at 0.34 km/s', Quantity('0.34 km/s')],
@@ -74,7 +78,7 @@ if __name__ == "__main__":
         "approximate",
         "approx",
         "closed cup",
-        "(NTP, 1992)"
+        "(NTP, 1992)",
         ]
 
     _test_func(main_quantity_parse, examples, {"remove_string": delete_text})

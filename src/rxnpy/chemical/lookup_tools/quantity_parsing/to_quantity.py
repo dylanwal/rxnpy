@@ -1,14 +1,16 @@
 from typing import List, Optional, Any, Union, Tuple
 import re
 
-from src.rxnpy import Unit, Quantity
-from sig_figs import sig_figs
-from pre_processing import _substitutions_general
+from rxnpy import Unit, Quantity
+from rxnpy.chemical.lookup_tools.quantity_parsing.sig_figs import sig_figs
+from rxnpy.chemical.lookup_tools.quantity_parsing.pre_processing import _substitutions_general
+from rxnpy.chemical.lookup_tools.quantity_parsing.utils import _flatten_list, _contains_number
 
 
 last_minute_substitions = [
     ["LB", "lb"],
     ["mm Hg", "mmHg"],
+    ["kpa", "kPa"],
     ["-{1}[^0-9]*$", ""],
     ["° F", "°F"],
     ["° C", "°C"],
@@ -19,6 +21,8 @@ def _to_quantity(text_in: str) -> Quantity:
     """Attempt to create Quantity from string."""
     text_in = _substitutions_general(text_in, last_minute_substitions)
     if "@" in text_in:
+        return None
+    if not _contains_number(text_in):
         return None
 
     try:
@@ -209,7 +213,6 @@ def _split_on_parenthesis(text_in: Union[str, list[str]]) -> List[str]:
         return text_in
 
     for i, text in enumerate(text_list):
-        out_add = []
         if isinstance(text, str) and "(" in text:
             text_inside = text[text.find("(")+1:text.rfind(")")]
             out_add = _split_list(text, text_inside)
@@ -221,33 +224,8 @@ def _split_on_parenthesis(text_in: Union[str, list[str]]) -> List[str]:
             out_add = [text for text in out_add if text != None]
             text_list[i] = out_add
 
-    # text_split = text_in_list
-    # for text_ in text_in_list:
-    #     if isinstance(text_, str) and "(" in text_:
-    #         in_parenthesis = re.findall("[(].*[)]", text_)
-    #         for chunk in in_parenthesis:
-    #             text_split = _split_list(text_split, chunk)
-    #
-    #             # Turn parenthesis into a Unit if valid
-    #             unit_in_parenthesis = _get_unit(chunk[1:-1])  # remove parenthesis
-    #             for i, obj in enumerate(text_split):
-    #                 if obj == chunk:
-    #                     text_split[i] = unit_in_parenthesis
     return _flatten_list(text_list)
 
-
-def _flatten_list(list_in: List[Any]) -> List[Any]:
-    if not isinstance(list_in, list):
-        return list_in
-
-    list_out = []
-    for _obj in list_in:
-        if isinstance(_obj, list):
-            list_out += _flatten_list(_obj)
-        else:
-            list_out.append(_obj)
-
-    return list_out
 
 def _split_on_powers(text_in: Union[str, list[str]]) -> List[str]:
     """Splits text up into a list of strings based on ** locations."""
@@ -304,7 +282,7 @@ def _split_list(text_split: List[Union[str, Any]], chunks: Union[str, List[str]]
     for chunk in chunks:
         for i, text in enumerate(text_split):
             if isinstance(text, str) and chunk in text:
-                split_cell = text_split.pop(i).split(chunk, maxsplit=maxsplit) # split cell into 2
+                split_cell = text_split.pop(i).split(chunk, maxsplit=maxsplit)  # split cell into 2
                 split_cell.insert(1, chunk)  # insert chunk back into middle
                 split_cell = [cell for cell in split_cell if cell]  # remove empty strings ""
                 for ii, cell in enumerate(split_cell):  # re-add the new split cells back into list in the correct position

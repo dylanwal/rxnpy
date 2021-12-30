@@ -1,7 +1,7 @@
 
 import re
 
-from src.rxnpy.chemical.periodic_table import PeriodicTable
+from rxnpy.chemical.periodic_table import PeriodicTable
 
 
 class MolecularFormulaError(Exception):

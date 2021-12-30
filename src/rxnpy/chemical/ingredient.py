@@ -3,8 +3,8 @@ from functools import total_ordering
 from dataclasses import dataclass
 import json
 
-from src.rxnpy import Quantity, Unit, float_limit
-from src.rxnpy.utilities.serializer import Serializable
+from rxnpy import Quantity, Unit, float_limit
+from rxnpy.utilities.serializer import Serializable
 
 
 class IngredientError(Exception):

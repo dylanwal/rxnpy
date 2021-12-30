@@ -4,8 +4,8 @@ This file contains a list of elements and a function to check chemical formulas 
 
 import json
 
-from src.rxnpy.chemical.referance_data import elements_data
-from src.rxnpy.chemical.element import Element
+from rxnpy.chemical.referance_data import elements_data
+from rxnpy.chemical.element import Element
 
 
 class PeriodicTable:

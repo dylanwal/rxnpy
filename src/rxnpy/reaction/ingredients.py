@@ -1,8 +1,8 @@
 from warnings import warn
 
 
-from src.rxnpy.chemical.ingredient import Ingredient
-from src.rxnpy.reaction.tools.ingredients_calc import QuantityCalculator, RelativeCalculator
+from rxnpy.chemical.ingredient import Ingredient
+from rxnpy.reaction.tools.ingredients_calc import QuantityCalculator, RelativeCalculator
 
 
 class IngredientsError(Exception):

@@ -1,14 +1,12 @@
 from typing import List, Dict, Any, Union
-from copy import deepcopy
 import json
 import re
-from statistics import mean
 
-from pint.errors import OffsetUnitCalculusError, UndefinedUnitError
 from dictpy import DictSearch, Serializer
+from rxnpy.chemical.lookup_tools.quantity_parsing import main_quantity_parse, reduce_quantity_list
 
-from src.rxnpy.chemical.molecular_formula import MolecularFormula
-from src.rxnpy import Unit, Quantity
+from rxnpy.chemical.molecular_formula import MolecularFormula
+from rxnpy import Quantity
 
 iden = [
     ["InChI", "inchi"],
@@ -20,20 +18,29 @@ iden = [
 
 
 prop = [
-    ["Color/Form", "color"],
-    ["Odor", "odor"],
-    ["Boiling Point", "bp"],
-    ["Melting Point", "mp"],
-    ["Viscosity", "viscosity"],
-    ["Vapor Pressure", "vapor_pres"],
-    # ["Solubility", "solubility"],
-    ["Flash Point", "flash_point"],
-    ["Autoignition Temperature", "autoignition"],
-    ["Heat of Combustion", "heat_combustion"],
-    ["Heat of Vaporization", "heat_vaporization"],
-    ["Surface Tension", "surface_tension"],
-    ["Ionization Potential", "ion_potential"],
-    ["Refractive Index", "refract_index"]
+    ["Color/Form", "color", False],
+    ["Odor", "odor", False],
+    ["Stability/Shelf Life", "s", False],
+    ["Decomposition", "d", False],
+    ["Kovats Retention Index", "k", True],
+    ["Odor Threshold", "o", True],
+    ["Density", "density", True],
+    ["Boiling Point", "bp", True],
+    ["Melting Point", "mp", True],
+    ["Viscosity", "viscosity", True],
+    ["Vapor Pressure", "vapor_pres", True],
+    ["Vapor Density", "vapor_density", True],
+    ["Flash Point", "flash_point", True],
+    ["Autoignition Temperature", "autoignition", True],
+    ["Heat of Combustion", "heat_combustion", True],
+    ["Heat of Vaporization", "heat_vaporization", True],
+    ["Surface Tension", "surface_tension", True],
+    ["Refractive Index", "refract_index", True],
+    ["LogP", "log_p", True],
+    ["pKa", "pka", True],
+    ["pH", 'ph', True],
+    ["Henrys Law Constant", "henry_constant", True],
+    ["Optical Rotation", "optical_rot", True]
 ]
 
 
@@ -55,7 +62,7 @@ class PubChemMaterial(Serializer):
             setattr(self, i[1], self.get_iden(i[0]))
 
         for p in prop:
-            setattr(self, p[1], self.get_prop(p[0]))
+            setattr(self, p[1], self.get_prop(p[0], p[2]))
 
         self.post_processing()
 
@@ -80,14 +87,14 @@ class PubChemMaterial(Serializer):
 
         return result
 
-
-    def reduce_duplicates(self, result: List) -> Any:
+    @staticmethod
+    def reduce_duplicates(result: List) -> Any:
         """Find most repeated value."""
         result_set = list(set(result))
         counts = [result.count(value) for value in result_set]
         return result_set[counts.index(max(counts))]
 
-    def get_prop(self, prop_name: str):
+    def get_prop(self, prop_name: str, numerical: bool = True):
         """Given a property name; try to find it and clean it up."""
         try:
             _intermediate = DictSearch(
@@ -99,105 +106,25 @@ class PubChemMaterial(Serializer):
         except IndexError:
             return None
 
-        if self._contains_number(result):
+        if numerical and self._contains_number(result):
             result = result if isinstance(result, list) else [result]
             result = self._process_numerical_data(result)
+        else:
+            if isinstance(result, list) and len(result) > 1:
+                result = result[0]
 
         return result
 
     @staticmethod
-    def _contains_number(data: List) -> bool:
+    def _contains_number(obj_in: Union[str, List]) -> bool:
         """ Checks list to see if it has a number in it anywhere."""
-        return any([bool(re.search(r'\d', value)) for value in data])
-
-    def _process_numerical_data(self, result: List[str]) -> Union[Quantity, List[List[Quantity]]]:
-        """
-        Takes a list of strings figures out the quanity to return.
-        Or if conditions are found it return List[value, condition]
-        If multiple conditions found List[List[value, condition]]
-
-        :param result: List of strings that contain property data
-        :return:
-        """
-        cleaned_data = []
-        for data in result:
-            # genernal data cleaning
-            data = re.sub("[\(].*[\)]", "", data)
-            data = re.sub("^[a-zA-Z;,.: /]*", "", data)
-            data = re.sub("@", "at", data)
-            data = re.sub("={1}.*$", "", data)
-
-            # look for "### unit at ### unit"
-            # if we find this list, take all the data
-            if len(data_found :=
-                   re.findall("[-.0-9]{1,7} {0,1}[^0-9,/;]{0,8} at [-.0-9]{1,7} {0,1}[^0-9,/;]{0,8}", data)) >= 1:
-                out = []
-                for point in data_found:
-                    points = re.findall("[-.0-9]{1,6}[ ]{0,2}[^0-9,/]{0,8}", point)
-                    main_value = self._make_quanity(re.sub("at", "", points[0]))
-                    cond = self._make_quanity(points[1])
-                    if main_value is not None and cond is not None: out.append([main_value, cond])
-
-                return out
-
-            # reduce ranges
-            if bool(data_found :=re.findall("([-.0-9]{1,6}[- ]{1,3}[-.0-9]{1,6})|([-.0-9]{1,6}[^0-9-,/;]{0,8}[- ]{1,"
-                                     "3}[-.0-9]{1,6}[^0-9,/;]{0,8})",data)):
-                data = re.findall("[-.0-9]{1,6}[^0-9-,/; ]{0,8}", data_found)[0]
-
-            # convert to quanity
-            data = self._make_quanity(data)
-            if data is not None: cleaned_data.append(data)
-
-        # Narrow down list
-        return self._reduce_unit_list(cleaned_data)
-
-    @staticmethod
-    def _make_quanity(text: str) -> Quantity:
-        value = re.findall('^[0-9.-]+', text.lstrip())[0]
-        unit = text.strip(value).replace(" ", "")
-
-        unit = re.sub("LB", "lb", unit)
-        find_dash = re.search("[^0-9]{1}-{1}[^0-9]{1}", unit)
-        if find_dash is not None:
-            unit = unit[:find_dash.span()[0]+1] + "*" + unit[find_dash.span()[1]-1:]
-
-        try:
-            try:
-                return float(value) * Unit(unit)
-            except OffsetUnitCalculusError:
-                if re.findall('F', text):
-                    return float(value) * Unit("degF")
-                elif re.findall("C", text):
-                    return float(value) * Unit("degC")
-        except UndefinedUnitError:
-            pass
-
-        return None
-
-    @staticmethod
-    def _reduce_unit_list(data_in: List[Quantity]) -> Quantity:
-        if len(data_in) <= 2:
-            return data_in[0]
-
-        # find most common dimnsion and filter out any bad ones.
-        unit_dimnsionality_count = {}
-        for data in data_in:
-            if data.dimensionality not in unit_dimnsionality_count:
-                unit_dimnsionality_count[data.dimensionality] = 1
-            else:
-                unit_dimnsionality_count[data.dimensionality] += 1
-
-        most_common_unit = max(unit_dimnsionality_count, key=unit_dimnsionality_count.get)
-        data_in = [data for data in data_in if most_common_unit == data.dimensionality]
-
-        # remove data furthest from average till 1 point left
-        for i in range(len(data_in)-1):
-            data_average = sum([data.to_base_units() for data in data_in])/len(data_in)
-            differance_list = [abs(data.to_base_units()-data_average) for data in data_in]
-            data_in.pop(differance_list.index(max(differance_list)))
-
-        return data_in[0]
+        _pattern = r'\d'
+        if isinstance(obj_in, list):
+            return any([bool(re.search(_pattern, value)) for value in obj_in])
+        elif isinstance(obj_in, str):
+            return bool(re.search(_pattern, obj_in))
+        else:
+            raise TypeError
 
     @staticmethod
     def get_object(data: dict, _type: str = "String"):
@@ -244,9 +171,31 @@ class PubChemMaterial(Serializer):
         if self.names:
             pattern = r"([0-9]+[-]{1}[0-9]+[-]{1}[0-9]+)|([0-9]{3})"
             self.names = [name for name in self.names if not re.search(pattern, name)]
+            
+            if self.name not in self.names:
+                self.names.append(self.name)
 
         if self.mol_formula:
             self.mol_formula = MolecularFormula(self.mol_formula)
+
+    @staticmethod
+    def _process_numerical_data(result: List[str]) -> Union[Quantity, List[List[Quantity]]]:
+        """
+        Takes a list of strings figures out the quanity to return.
+        Or if conditions are found it return List[value, condition]
+        If multiple conditions found List[List[value, condition]]
+
+        :param result: List of strings that contain property data
+        :return:
+        """
+        out = []
+        for r in result:
+            q = main_quantity_parse(r)
+            if q != [] and q is not None:
+                out.append(q)
+
+        out = reduce_quantity_list(out)
+        return out
 
 
 if __name__ == "__main__":
@@ -263,7 +212,7 @@ if __name__ == "__main__":
 
 
     def get_data(file_path: Path) -> dict:
-        with open(file_path, "r", encoding="UTF-8") as f:
+        with open(file_path, "r", encoding="latin-1") as f:
             text = f.read()
             json_data = json.loads(text)
 
@@ -275,10 +224,10 @@ if __name__ == "__main__":
     for file in files_list:
         json_data.append(get_data(file))
 
-    # run extration on json files
+    # run extraction on json files
     materials = []
-    for data in json_data[0:1]:
-        material = PubChemMaterial(data)
+    for _data in json_data:
+        material = PubChemMaterial(_data)
         print(material)
         materials.append(material)
 

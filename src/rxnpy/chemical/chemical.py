@@ -2,8 +2,8 @@
 import json
 
 
-from molecular_formula import MolecularFormula
-from ingredient import Ingredient
+from rxnpy.chemical.molecular_formula import MolecularFormula
+from rxnpy.chemical.ingredient import Ingredient
 
 
 class Chemical(Ingredient):

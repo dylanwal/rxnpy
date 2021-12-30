@@ -3,20 +3,31 @@ import re
 
 
 default_general_substitutions = [
-    ["^[a-zA-Z;,.: /]*", ""], # remove text at front of strings
-    ["[^a-zA-Z]at[^a-zA-Z]", " @ "], # replace at with @
-    ["−", "-"],  # uninify dash (long, short) symbols
-    ["·", "*"],  # uninify multiplication symbols
-    ["X", "*"],  # uninify multiplication symbols
+    ["^[a-zA-Z;,.: /]*", ""],  # remove text at front of strings
+    ["(?<=[^a-zA-Z])at([^a-zA-Z])", " @ "],  # replace at with @
+    ["−", "-"],  # unify dash (long, short) symbols
+    ["·", "*"],  # unify multiplication symbols
+    ["(?<=[0-9]{1})[ ]{0,1}X[ ]{0,1}(?=[0-9]{1})", "*"],  # unify multiplication symbols
+    ["(?<=[0-9]{1})[ ]{0,1}x[ ]{0,1}(?=[0-9]{1})", "*"],  # unify multiplication symbols
     ["\[", "("],  # make all brackets parenthesis
     ["\]", ")"],  # make all brackets parenthesis
-    ["={1}.*$", ""], # if equals in string take first term
+    ["={1}.*$", ""],  # if equals in string take first term
     ["^.*:{1}", ""]  # delete everything in front of collen
 ]
 
 
-def substitution_main(text_in: str) -> str:
+def substitution_main(text_in: List[str]) -> str:
     """Preforms the standard series of substitutions."""
+    if isinstance(text_in, list):
+        for i, item in enumerate(text_in):
+            text_in[i] = _substitution_pipeline(item)
+    elif isinstance(text_in, str):
+        text_in = _substitution_pipeline(text_in)
+
+    return text_in
+
+
+def _substitution_pipeline(text_in: str):
     text_in = _substitutions_general(text_in)
     text_in = _substitutions_power(text_in)
     text_in = _substitutions_sci_notation(text_in)
@@ -185,10 +196,11 @@ if __name__ == "__main__":
 
 
     test_sub_pattern2 = [
-        # postive control (makes changes)
-        ['20.8 mm Hg at 25 °C', '20.8 mm Hg @ 25 °C'],
+        # positive control (makes changes)
+        ["37.34 kJ/mole (at 25 °C)", "37.34 kJ/mole ( @ 25 °C)"],
+        ['20.8 mm Hg at 25 °C', '20.8 mm Hg  @ 25 °C'],
         ["	0.909 g/cm3", "0.909 g/cm3"],
-        ['Sound travels at 0.34 km/s', 'Sound travels @ 0.34 km/s'],
+        ['Sound travels at 0.34 km/s', 'Sound travels  @ 0.34 km/s'],
 
         # negative control (no changes made)
         ['20.8 mm Hg @ 25 °C', '20.8 mm Hg @ 25 °C'],
@@ -199,7 +211,7 @@ if __name__ == "__main__":
         ["39.2 g/[mol * s]]", "39.2 g/[mol * s]]"],
         ['−66.11·10-62 cm3/mol', '−66.11·10-62 cm3/mol']
     ]
-    pattern = ["[^a-zA-Z]at[^a-zA-Z]", " @ "]
+    pattern = ["(?<=[^a-zA-Z])at([^a-zA-Z])", " @ "]
     print(f"\nTest pattern: '{pattern[0]}' -> '{pattern[1]}'")
     _test_func(_substitutions_general, test_sub_pattern2, {"patterns": [pattern]})
 
