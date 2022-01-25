@@ -3,8 +3,9 @@ from functools import total_ordering
 from dataclasses import dataclass
 import json
 
+from dictpy import Serializer
+
 from rxnpy import Quantity, Unit, float_limit
-from rxnpy.utilities.serializer import Serializable
 
 
 class IngredientError(Exception):
@@ -83,7 +84,7 @@ class IngrRole(Enum):
 
 
 @dataclass
-class Ingredient(Serializable):
+class Ingredient(Serializer):
     name: str
     mass: Quantity = None
     volume: Quantity = None
