@@ -62,11 +62,15 @@ class LogFormatter(logging.Formatter):
 
         return result
 
+fh = logging.FileHandler('spam.log')
+fh.setFormatter(LogFormatter())
 
-logger_chem_look_up = logging.getLogger("look_up_logger")
+
+logger_chem = logging.getLogger("look_up_logger")
 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(LogFormatter())
-logger_chem_look_up.addHandler(stream_handler)
+# chem_logger.addHandler(stream_handler)
+logger_chem.addHandler(fh)
 
-logger_chem_look_up.setLevel(logging.DEBUG)
+logger_chem.setLevel(logging.WARNING)

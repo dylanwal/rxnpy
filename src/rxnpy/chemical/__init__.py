@@ -1,5 +1,5 @@
-from .element import Element
-from .periodic_table import PeriodicTable
-from .molecular_formula import MolecularFormula, MolecularFormulaError
+from rxnpy.chemical.element import Element
+from rxnpy.chemical.periodic_table import PeriodicTable
+from rxnpy.chemical.sub_objects.molecular_formula import MolecularFormula
 
-__all__ = ["Element", "PeriodicTable", "MolecularFormula", "MolecularFormulaError"]
+__all__ = ["Element", "PeriodicTable", "MolecularFormula"]

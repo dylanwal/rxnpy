@@ -1,7 +1,8 @@
 
 import re
 
-from rxnpy.chemical.periodic_table import PeriodicTable
+from rxnpy.chemical.periodic_table import periodic_table
+from rxnpy.config.chemical import config_chemical
 
 
 class MolecularFormulaError(Exception):
@@ -9,19 +10,11 @@ class MolecularFormulaError(Exception):
 
 
 class MolecularFormula:
-    periodic_table = PeriodicTable()
-
-    def __init__(self, formula, order: list[str] = None):
-        """
-        Chemical formula
-        :param formula: chemical formula
-        :param order: order of chemical symbols; defaults to hill system; or auto-completes to alphabetical by symbol
-        """
-        self._order = order
+    def __init__(self, formula: str):
         self._formula = None
-        self.formula = formula
-
         self._elements = None
+
+        self.formula = formula
 
     def __str__(self):
         return str(self.formula)
@@ -29,14 +22,28 @@ class MolecularFormula:
     def __repr__(self):
         return str(self.formula)
 
+    def __getitem__(self, key: str):
+        if key in self._elements:
+            return self._elements[key]
+
+    def __iter__(self):
+        for element, num in self._elements.items():
+            yield element, num
+
     @property
     def formula(self):
         return self._formula
 
     @formula.setter
-    def formula(self, formula):
-        if formula is not None:
-            self._formula, self._elements = self.reduce(formula)
+    def formula(self, formula: str):
+        if not isinstance(formula, str):
+            raise TypeError(f"'formula' must be a str. ({type(formula)} given)")
+
+        self._formula, self._elements = self.reduce(formula)
+
+    @property
+    def elements(self):
+        return self._elements
 
     def reduce(self, formula: str) -> (str, dict[str, int]):
         """
@@ -46,7 +53,7 @@ class MolecularFormula:
         """
         split_formula = self._split_formula(formula)
         elements = self._split_formula_to_element_dict(split_formula)
-        formula = self._element_to_formula(elements, self._order)
+        formula = self._element_to_formula(elements, config_chemical.molecular_formula_element_order)
 
         return formula, elements
 
@@ -59,7 +66,8 @@ class MolecularFormula:
         pattern = r'[A-Z]{1}[a-z]*|\d+'
         return re.findall(pattern, formula)
 
-    def _split_formula_to_element_dict(self, split_formula: list[str]) -> dict[str, int]:
+    @staticmethod
+    def _split_formula_to_element_dict(split_formula: list[str]) -> dict[str, int]:
         """
         Given a split chemical formula return a dictionary of elements.
         :param split_formula:
@@ -69,22 +77,22 @@ class MolecularFormula:
         elements = {}
         for index, entry in enumerate(split_formula):
             if not entry.isnumeric():
-                if entry not in self.periodic_table.element_symbols:
+                if entry not in periodic_table.symbols:
                     raise MolecularFormulaError(f"Invalid symbol in chemical formula. Invalid: {entry}")
 
                 if entry in elements:
-                    try:
+                    if index + 1 < len(split_formula):
                         num_ = split_formula[index + 1]
-                    except IndexError:
+                    else:
                         num_ = "1"
                     if num_.isnumeric():
                         elements[entry] = int(num_) + elements[entry]
                     else:
                         elements[entry] = 1 + elements[entry]
                 else:
-                    try:
+                    if index + 1 < len(split_formula):
                         num_ = split_formula[index + 1]
-                    except IndexError:
+                    else:
                         num_ = "1"
                     if num_.isnumeric():
                         elements[entry] = int(num_)
@@ -118,9 +126,10 @@ class MolecularFormula:
 
         return chemical_formula
 
-    def _set_element_order_in_formula(self, order: list[str] = None) -> list[str]:
+    @staticmethod
+    def _set_element_order_in_formula(order: list[str] = None) -> list[str]:
         """Given a chemical order of elements, validate it/ and complete it. Default is alphabetically."""
-        base = self.periodic_table.element_symbols
+        base = periodic_table.symbols_alphabetical_order()
         if order is None:
             return base
 
@@ -134,6 +143,10 @@ class MolecularFormula:
         return base
 
 
-if __name__ == '__main__':
+def local_run():
     cf = MolecularFormula("C1H3OH63Cr2CCCOOO")
     print(cf)
+
+
+if __name__ == '__main__':
+    local_run()

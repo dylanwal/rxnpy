@@ -1,55 +1,50 @@
+from typing import Union
 
-import json
+from dictpy import Serializer
+
+from rxnpy.utilities.decorators import freeze_class
+from rxnpy.utilities.reference_list import ObjList
+from rxnpy.chemical.sub_objects.identifiers import Iden
+from rxnpy.chemical.sub_objects.logger import logger_chem
+from rxnpy.chemical.sub_objects.property import Prop
 
 
-from rxnpy.chemical.molecular_formula import MolecularFormula
-from rxnpy.chemical.ingredient import Ingredient
-
-
-class Chemical(Ingredient):
+@freeze_class
+class Chemical(Serializer):
+    _logger = logger_chem
 
     def __init__(self,
-                 formula: str = None,
-                 **kwargs):
+                 iden: Iden,
+                 prop: Union[list[Prop], Prop] = None,
+                 ):
 
-        self._formula_obj = MolecularFormula(None, kwargs.pop("order") if "order" in kwargs.keys() else None)
-        self._formula = None
-        self.formula = formula
-
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def __str__(self):
-        list_ = ["name", "formula"]
-        return ", ".join([getattr(self, v) for v in list_ if getattr(self, v) is not None])
+        self.iden = iden
+        self.prop = ObjList(Prop, prop, _logger=self._logger)
 
     def __repr__(self):
-        skip = ["_formula_obj"]
-        return json.dumps(self.as_dict(skip=skip), indent=4, sort_keys=False)
+        text = repr(self.iden)
+        text += f"; # of props = {len(self.prop)}"
+        return text
 
-    @property
-    def formula(self):
-        return self._formula
 
-    @formula.setter
-    def formula(self, formula):
-        self._formula_obj.formula = formula
-        self._formula = self._formula_obj.formula
+def local_run():
+    import pprint
+    from rxnpy import Q
+    from rxnpy.chemical.sub_objects.condition import Cond
+
+    iden = Iden(name="toluene", names="methylbenzene", cas="108-88-3", pubchem_cid=1140, mol_for="C7H8")
+
+    chemical = Chemical(iden,
+                        [
+                            Prop("temp_boil", Q("111 degC")),
+                            Prop("molar_mass", Q("92.1 g/mol")),
+                            Prop("density", Q("0.87"), cond=Cond("temp", Q("20 degC")))
+                        ])
+
+    print(chemical)
+    json_ = chemical.to_JSON()
+    pprint.pprint(json_)
 
 
 if __name__ == "__main__":
-    from pint import Unit
-    from ingredient import IngrRole
-    chemical = Chemical(**{
-        "name": "secbuLi",
-        "formula": "C3H7Li",
-        "volume": 0.0172 * Unit("ml"),
-        "molar_mass": 64.06 * Unit("g/mol"),
-        "density": 0.768 * Unit("g/ml"),
-        "molar_concentration": 1.3 * Unit("M"),
-        "keyword": IngrRole.INITIATOR,
-        "bp": 100,
-        "cas": "3432-23432-23"
-    })
-    print(chemical)
-    print(repr(chemical))
+    local_run()

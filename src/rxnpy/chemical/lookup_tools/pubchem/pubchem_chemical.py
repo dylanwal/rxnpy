@@ -8,10 +8,15 @@ import pprint
 from dictpy import DictSearch, Serializer
 import unit_parse
 
-from rxnpy.chemical.lookup_tools.logger_lookup import look_up_logger
-from rxnpy.chemical.molecular_formula import MolecularFormula
 from rxnpy import Quantity
 from rxnpy.config.pubchem import config_PubChem
+from rxnpy.chemical.lookup_tools.logger_lookup import logger_chem_look_up
+from rxnpy.chemical.sub_objects.molecular_formula import MolecularFormula
+from rxnpy.chemical.utils import calc_molar_mass
+
+
+unit_parse.config.pre_proc_sub += config_PubChem.replace_text
+unit_parse.config.remove_text += config_PubChem.delete_text
 
 
 class AttList(Serializer):
@@ -69,7 +74,7 @@ class PubChemChemical(Serializer):
         self.get_prop()
 
         self.post_processing()
-        look_up_logger.debug(f"PubChem: cid_{self.iden.pubchem_cid} finish obtaining identifiers and properties.")
+        logger_chem_look_up.debug(f"PubChem: cid_{self.iden.pubchem_cid} finish obtaining identifiers and properties.")
 
     def __str__(self):
         return f"{self.iden.name} (cid {self.iden.pubchem_cid})"
@@ -77,7 +82,7 @@ class PubChemChemical(Serializer):
     def pprint(self):
         dict_out = self.remove_none(self.dict_cleanup(self.as_dict()))
         dict_out.pop("raw_data")
-        return pprint.pprint(dict_out, width=160)
+        return pprint.pprint(dict_out)
 
     @staticmethod
     def download_from_pubchem(cid: int) -> dict:
@@ -94,7 +99,7 @@ class PubChemChemical(Serializer):
         Pubchem JSON: dict
 
         """
-        look_up_logger.debug(f"PubChem: cid_{cid} attempting to download.")
+        logger_chem_look_up.debug(f"PubChem: cid_{cid} attempting to download.")
         url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON/"
         flag = True
         ii = 0
@@ -104,7 +109,7 @@ class PubChemChemical(Serializer):
                 with urllib.request.urlopen(url) as url_data:
                     # load data into a dictionary
                     json_data = json.loads(url_data.read().decode("UTF-8"))
-                look_up_logger.debug(f"PubChem: cid_{cid} downloaded.")
+                logger_chem_look_up.debug(f"PubChem: cid_{cid} downloaded.")
                 return json_data
 
             except Exception as e:  # if web request fails
@@ -112,13 +117,14 @@ class PubChemChemical(Serializer):
                 time.sleep(5)
                 ii += 1
                 if ii == 5:  # stop completely if it can't get the JSON
-                    look_up_logger.error(f"PubChem: download of cid_{cid} failed due to too many failed tries.")
+                    logger_chem_look_up.error(f"PubChem: download of cid_{cid} failed due to too many failed tries.")
                     raise RuntimeError(e)
 
     # Identity stuff
     ##################################################################################################################
     def get_iden(self):
         self.iden.add("pubchem_cid", self._get_cid())
+        logger_chem_look_up.debug(f"PubChem: cid_{self.iden.pubchem_cid} starting to parse identifiers and properties.")
         self.iden.add("name", self._get_name())
         self.iden.add("names", self._get_names())
         for i in self.config_iden:
@@ -138,14 +144,18 @@ class PubChemChemical(Serializer):
                        return_func=DictSearch.return_current_object).result[0][1]["RecordTitle"]
         )
 
-    def _get_names(self) -> Union[str, None]:
+    def _get_names(self) -> Union[list[str], None]:
         """ Get chemical names. """
         _intermediate = DictSearch(data=self.raw_data, target={"TOCHeading": "Depositor-Supplied Synonyms"},
                                    return_func=DictSearch.return_parent_object).result
         if not _intermediate:  # section not present
             return None
 
-        return self.get_object(_intermediate[0][1])[:5]
+        result = self.get_object(_intermediate[0][1])
+        if isinstance(result, str):
+            return [result]
+
+        return result[:8]
 
     @staticmethod
     def get_object(data: dict, _type: str = "String"):
@@ -196,8 +206,12 @@ class PubChemChemical(Serializer):
         for p in self.config_prop:
             self.prop.add(p[1], self._get_prop_general(p[0], p[2]))
 
+        if hasattr(self.iden, "molecular_formula"):
+            self.prop.add("molar_mass", calc_molar_mass(self.iden.molecular_formula))
+
     def _get_prop_general(self, prop_name: str, quantity_check: bool = True):
         """Given a property name; try to find it and clean it up."""
+        # Try to get prop dictionary
         _intermediate = DictSearch(
             data=self.raw_data,
             target={"TOCHeading": prop_name},
@@ -206,8 +220,21 @@ class PubChemChemical(Serializer):
         if not _intermediate:  # no data
             return None
 
+        # get values out of prop dictionary
         result = self.get_object(_intermediate[0][1])
+        result2 = self.get_value(_intermediate[0][1])
 
+        if result is None and result2 is None:
+            return None
+        elif result is None and result2 is not None:
+            result = result2
+        elif result is not None and result2 is not None:
+            if isinstance(result, str):
+                result = result + result2
+            else:  # list
+                result.append(result2)
+
+        # do quality control
         if quantity_check and self._contains_number(result):
             # Clean up property data
             result = self._clean_property_data(result)
@@ -216,6 +243,24 @@ class PubChemChemical(Serializer):
                 result = result[0]
 
         return result
+
+    @staticmethod
+    def get_value(data: dict):
+        out = DictSearch(
+            data=data,
+            target={"Number": "*"},
+            return_func=DictSearch.return_parent_object
+        ).result
+
+        if not out:
+            return None
+
+        num = str(out[0][1]["Number"][0])
+        if "Unit" in out[0][1]:
+            unit = str(out[0][1]["Unit"])
+            return num + unit
+
+        return num
 
     @staticmethod
     def get_prop_keys(dict_) -> list[str]:
@@ -253,11 +298,14 @@ class PubChemChemical(Serializer):
         quantity_list = []
         for prop in prop_list:
             try:
-                result = unit_parse.parser(prop, remove_string=config_PubChem.delete_text)
+                result = unit_parse.parser(prop)
                 if result is not None:
                     quantity_list.append(result)
             except:
                 pass
+
+        if len(quantity_list) == 1:
+            return quantity_list[0]
 
         return quantity_list
 
@@ -269,20 +317,59 @@ class PubChemChemical(Serializer):
             self.iden.inchi = self.iden.inchi.strip("InChI=")
 
         if self.iden.names:
-            pattern = r"([0-9]+[-]{1}[0-9]+[-]{1}[0-9]+)|([0-9]{3})"
-            self.iden.names = [name for name in self.iden.names if not re.search(pattern, name)]
+            self._post_processing_names()
 
-            if self.iden.name not in self.iden.names:
-                self.iden.names.append(self.iden.name)
-
-        if self.iden.chem_formula:
-            self.iden.chem_formula = MolecularFormula(self.iden.chem_formula)
+        if self.iden.molecular_formula:
+            self.iden.molecular_formula = MolecularFormula(self.iden.molecular_formula)
 
         if hasattr(self.prop, "density"):
             if isinstance(self.prop.density, (float, int)):
                 self.prop.density = Quantity(f"{self.prop.density} g/mol")
             elif isinstance(self.prop.density, Quantity) and self.prop.density.dimensionless:
                 self.prop.density = self.prop.density * Quantity(f"1 g/mol")
+
+    def _post_processing_names(self):
+        """ Everything to clean up names. """
+        pattern = r"([0-9]+[-]{1}[0-9]+[-]{1}[0-9]+)|([0-9]{3})"  # looking for cas number
+        self.iden.names = [name for name in self.iden.names if not re.search(pattern, name)]
+        self.iden.names = [name for name in self.iden.names if not name.isupper()]  # remove all capitalized words
+        self.iden.names = [name.strip().strip(",") for name in self.iden.names]
+        self.iden.names = self._names_fix_segmented(self.iden.names)
+
+        if self.iden.name not in self.iden.names:
+            self.iden.names.insert(0, self.iden.name)
+
+        self.iden.names = self._names_fix_duplicates(self.iden.names)
+        self.iden.names = self.iden.names[:min([len(self.iden.names), 5])]
+
+    @staticmethod
+    def _names_fix_segmented(list_text: list[str]) -> list[str]:
+        """ Takes test that is '####, ####-' --> '####-####' """
+        out = []
+        for text in list_text:
+            split = re.split(r"(?<=[a-zA-Z]), (?=[1-9a-zA-Z])", text, maxsplit=1)
+            if len(split) == 2 and split[1][-1] == "-":
+                out.append(split[1] + split[0])
+                continue
+
+            out.append(text)
+
+        return out
+
+    @staticmethod
+    def _names_fix_duplicates(list_text: list[str]) -> list[str]:
+        """ Removes duplicate names """
+        lower = [text.lower() for text in list_text]
+        seen_index = set()
+        seen = set()
+        for i, text in enumerate(lower):
+            if text in seen:
+                continue
+
+            seen.add(text)
+            seen_index.add(i)
+
+        return [list_text[index] for index in seen_index]
 
 
 def get_files(path, pattern: str = "cid_*.json") -> list[str]:
@@ -314,25 +401,27 @@ def get_data(file_path) -> dict:
     return json_data
 
 
-def test_local_multi():
+def local_run_multi():
+    import time
     from pathlib import Path
-    # path = (Path(__file__).parent / Path("data"))
-    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
+    path = (Path(__file__).parent / Path("data"))
+    # path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
     file_list = get_files(path)
 
-    for file in file_list[120:130]:
+    for file in file_list:
         json_data = get_data(file)
         material = PubChemChemical(raw_data=json_data)
         print(material)
         material.pprint()
+        time.sleep(0.1)
 
     print("done")
 
 
 def get_prop_keys():
     from pathlib import Path
-    # path = (Path(__file__).parent / Path("data"))
-    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
+    path = (Path(__file__).parent / Path("data"))
+    # path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
 
     file_list = get_files(path)
 
@@ -351,22 +440,23 @@ def get_prop_keys():
     print("done")
 
 
-def test_local():
+def local_run_file():
     """ Get material from website. """
     from pathlib import Path
     #path = (Path(__file__).parent / Path("data/cid_7501.json"))
-    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files\cid_1136.json")
+    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files\cid_120.json")
 
     json_data = get_data(path)
     material = PubChemChemical(raw_data=json_data)
     material.pprint()
 
 
-def test():
+def local_run():
     """ Get material from website. """
-    material = PubChemChemical(cid=7501)
+    material = PubChemChemical(cid=1111)
     material.pprint()
 
 
 if __name__ == "__main__":
-    test_local_multi()
+    local_run_multi()
+    # local_run_file()

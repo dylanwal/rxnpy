@@ -18,12 +18,13 @@ class ConfigPubChem:
             ["InChI", "inchi"],
             ["InChI Key", "inchi_key"],
             ["Canonical SMILES", "smiles"],
-            ["Molecular Formula", "chem_formula"],
+            ["Molecular Formula", "mol_for"],
             ["CAS", "cas"]
         ]
 
         self.pubchem_properties = [
             # [key on pubchem, key to be stored as, has units, default units (None skips)]
+            # molar_mass calculated from molecular_formula
             ["Color/Form", "color", False],
             ["Taste", "taste", False],
             ['Polymerization', 'polymerization', False],
@@ -33,7 +34,7 @@ class ConfigPubChem:
             ["Stability/Shelf Life", "stability", False],
             ["Decomposition", "decomposition", False],
             ["Kovats Retention Index", "kovats_index", True, None],
-            ["Odor Threshold", "oder_threshold", True, None],
+            ["Odor Threshold", "oder_threshold", True, "part_per_million"],
             ["Density", "density", True, "kilogram / meter ** 3"],
             ["Boiling Point", "temp_boil", True, "kelvin"],
             ["Melting Point", "temp_melt", True, "kelvin"],
@@ -45,13 +46,13 @@ class ConfigPubChem:
             ["Heat of Combustion", "heat_combustion", True, None],
             ["Heat of Vaporization", "heat_vaporization", True, None],
             ["Surface Tension", "surface_tension", True, "kilogram / second ** 2"],
-            ["Refractive Index", "refract_index", True, None],
-            ["LogP", "log_p", True, None],
+            ["Refractive Index", "refract_index", True, ""],
+            ["LogP", "log_p", True, ""],
             ["pKa", "pka", True, None],
             ["LogS", "log_s", True, None],
             ["LogKoa", "log_koa", True, None],
             ["pH", 'ph', True, None],
-            ["Henrys Law Constant", "henry_constant", True, None],
+            ["Henrys Law Constant", "henry_constant", True, 'kilogram * meter ** 2 / mole / second ** 2'],
             ["Optical Rotation", "optical_rot", True, None],
             ['Ionization Potential', 'ionization_potential', True, None],
             ['Dissociation Constants', "dissociation_constants", None],
@@ -64,19 +65,32 @@ class ConfigPubChem:
             "approximate",
             "approx",
             "closed cup",
-            "(Closed cup)"
-            "(closed cup)"
-            "Closed cup"
+            "(Closed cup)",
+            "(closed cup)",
+            "Closed cup",
+            "- closed cup",
             "(NTP, 1992)",
+            "NTP, 1992",
             "USCG, 1999",
             "Open cup",
             "open cup",
             "(open cup)",
-            "(Open cup)"
+            "(Open cup)",
             'EPA, 1998',
+            '(EPA, 1998)',
             'NIOSH, 2016',
-            "c.c."
+            '(NIOSH, 2016)',
+            "c.c.",
+            "/Estimated/",
+            "/extrapolated/",
+            "LogP"
             ]
+
+        self.replace_text = [
+            ["dec C", "degC"],
+            ['°C/D', 'degC'],
+            ["/4 °C", ""]
+        ]
 
 
 config_PubChem = ConfigPubChem()
