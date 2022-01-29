@@ -1,4 +1,5 @@
 from typing import Union
+import pprint
 
 from dictpy import Serializer
 
@@ -26,9 +27,13 @@ class Chemical(Serializer):
         text += f"; # of props = {len(self.prop)}"
         return text
 
+    def pprint(self):
+        dict_out = self.remove_none(self.dict_cleanup(self.as_dict()))
+        dict_out.pop("raw_data")
+        return pprint.pprint(dict_out)
+
 
 def local_run():
-    import pprint
     from rxnpy import Q
     from rxnpy.chemical.sub_objects.condition import Cond
 

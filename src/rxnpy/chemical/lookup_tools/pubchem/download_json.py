@@ -11,7 +11,7 @@ from urllib.request import urlretrieve
 from time import sleep
 from random import randint
 
-from rxnpy.chemical.lookup_tools.logger_lookup import logger_chem_look_up
+from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
 
 
 def download_from_pubchem(cid: int, path_save: Union[Path, str] = os.getcwd()):
@@ -51,10 +51,10 @@ def download_from_pubchem(cid: int, path_save: Union[Path, str] = os.getcwd()):
             sleep(60)
             ii += 1
             if ii == 5:  # stop completely if it can't get the JSON
-                logger_chem_look_up.error(f"PubChem: download of cid_{cid} failed due to too many failed tries.")
+                logger_look_up.error(f"PubChem: download of cid_{cid} failed due to too many failed tries.")
                 raise RuntimeError(e)
 
-    logger_chem_look_up.debug(f"PubChem: cid_{cid} downloaded.")
+    logger_look_up.debug(f"PubChem: cid_{cid} downloaded.")
 
 
 def batch_download_from_pubchem(cid_start: int, cid_end: int,
@@ -83,7 +83,7 @@ def batch_download_from_pubchem(cid_start: int, cid_end: int,
     * pauses add to avoid 'denial-of-service' error
 
     """
-    logger_chem_look_up.info(f"PubChem: batch download beginning: cid_{cid_start} - cid_{cid_end}\n\t\tSaving to: "
+    logger_look_up.info(f"PubChem: batch download beginning: cid_{cid_start} - cid_{cid_end}\n\t\tSaving to: "
                         f"{path_save}")
     if isinstance(path_save, str):
         path_save = Path(path_save)
@@ -97,13 +97,13 @@ def batch_download_from_pubchem(cid_start: int, cid_end: int,
             pause = randint(5, 8)
             sleep(randint(3, 15))
 
-    logger_chem_look_up.info(f"PubChem: batch download done: cid_{cid_start} - cid_{cid_end}")
+    logger_look_up.info(f"PubChem: batch download done: cid_{cid_start} - cid_{cid_end}")
 
 
 def test():
     import logging
 
-    logger_chem_look_up.setLevel(logging.DEBUG)
+    logger_look_up.setLevel(logging.DEBUG)
 
     cwd = os.getcwd()
     folder = Path(cwd + r"\data")

@@ -41,6 +41,7 @@ class Iden(Serializer):
             pubchem_cid: int = None,
             inchi: str = None,
             inchi_key: str = None,
+            **kwargs
     ):
 
         self._name = None
@@ -77,6 +78,9 @@ class Iden(Serializer):
 
         self._inchi_key = None
         self.inchi_key = inchi_key
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def __repr__(self):
         text = f"{self.name}"

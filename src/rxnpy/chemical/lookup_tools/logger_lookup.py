@@ -63,10 +63,10 @@ class LogFormatter(logging.Formatter):
         return result
 
 
-logger_chem_look_up = logging.getLogger("look_up_logger")
+logger_look_up = logging.getLogger("logger_look_up")
 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(LogFormatter())
-logger_chem_look_up.addHandler(stream_handler)
+logger_look_up.addHandler(stream_handler)
 
-logger_chem_look_up.setLevel(logging.DEBUG)
+logger_look_up.setLevel(logging.DEBUG)

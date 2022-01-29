@@ -25,14 +25,14 @@ class ConfigPubChem:
         self.pubchem_properties = [
             # [key on pubchem, key to be stored as, has units, default units (None skips)]
             # molar_mass calculated from molecular_formula
-            ["Color/Form", "color", False],
-            ["Taste", "taste", False],
-            ['Polymerization', 'polymerization', False],
-            ['Physical Description', 'physical_description', False],
-            ["Odor", "odor", False],
-            ['Solubility', "solubility", False],
-            ["Stability/Shelf Life", "stability", False],
-            ["Decomposition", "decomposition", False],
+            ["Color/Form", "color", False, None],
+            ["Taste", "taste", False, None],
+            ['Polymerization', 'polymerization', False, None],
+            ['Physical Description', 'physical_description', False, None],
+            ["Odor", "odor", False, None],
+            ['Solubility', "solubility", False, None],
+            ["Stability/Shelf Life", "stability", False, None],
+            ["Decomposition", "decomposition", False, None],
             ["Kovats Retention Index", "kovats_index", True, None],
             ["Odor Threshold", "oder_threshold", True, "part_per_million"],
             ["Density", "density", True, "kilogram / meter ** 3"],
@@ -40,7 +40,7 @@ class ConfigPubChem:
             ["Melting Point", "temp_melt", True, "kelvin"],
             ["Viscosity", "viscosity", True, None],
             ["Vapor Pressure", "vapor_pres", True, "kilogram / meter / second ** 2"],
-            ["Vapor Density", "vapor_density", True, "kilogram / meter ** 3"],  # (Relative to Air)
+            ["Vapor Density", "vapor_density", True, ""],  # (Relative to Air)
             ["Flash Point", "temp_flash", True, "kelvin"],
             ["Autoignition Temperature", "temp_autoignition", True, "kelvin"],
             ["Heat of Combustion", "heat_combustion", True, None],
@@ -55,9 +55,9 @@ class ConfigPubChem:
             ["Henrys Law Constant", "henry_constant", True, 'kilogram * meter ** 2 / mole / second ** 2'],
             ["Optical Rotation", "optical_rot", True, None],
             ['Ionization Potential', 'ionization_potential', True, None],
-            ['Dissociation Constants', "dissociation_constants", None],
-            ['Corrosivity', "corrosivity", None],
-            ["Atmospheric OH Rate Constant", "atm_oh_rate_constant", None]
+            ['Dissociation Constants', "dissociation_constants", None, None],
+            ['Corrosivity', "corrosivity", None, None],
+            ["Atmospheric OH Rate Constant", "atm_oh_rate_constant", None, None]
         ]
 
         self.delete_text = [
@@ -83,13 +83,18 @@ class ConfigPubChem:
             "c.c.",
             "/Estimated/",
             "/extrapolated/",
-            "LogP"
+            "LogP",
+            "HSDB"
             ]
 
         self.replace_text = [
             ["dec C", "degC"],
             ['°C/D', 'degC'],
-            ["/4 °C", ""]
+            ["/4 °C", ""],
+            ["MM HG", "mmHg"],
+            ["MG", "mg"],
+            ["Â°", "degC"],
+            ["ºC", "degC"]
         ]
 
 
