@@ -1,8 +1,14 @@
 import json
 import os
+import logging
 
+from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
 from rxnpy.chemical import PubChemChemical
 from rxnpy.chemical.lookup_tools.pubchem.pubchem import get_files, get_data
+from unit_parse import logger
+
+# logger.setLevel(logging.ERROR)
+# logger_look_up.setLevel(logging.ERROR)
 
 
 def single_process(file):
@@ -19,14 +25,14 @@ def local_run():
     from pathlib import Path
 
     path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
-    file_list = get_files(path)
+    file_list = get_files(path)[1900:]
 
     start = time.time()
 
-    for file in file_list[:100]:
+    for file in file_list:
         single_process(file)
 
-    print((time.time()-start)/100)
+    print((time.time()-start))
 
     print("done")
 
@@ -37,17 +43,18 @@ def local_run_multi():
     import multiprocessing
 
     path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
-    file_list = get_files(path)[:100]
+    file_list = get_files(path)
 
     start = time.time()
 
     pool = multiprocessing.Pool(os.cpu_count() - 1)
     pool.map(single_process, file_list)
 
-    print((time.time() - start) / 100)
+    print(time.time() - start)
 
     print("done")
 
 
 if __name__ == '__main__':
     local_run()
+    # local_run_multi()

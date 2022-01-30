@@ -6,9 +6,31 @@ import json
 
 from dictpy import Serializer
 
+from rxnpy.config.quantity import Q
 from rxnpy.chemical.referance_data import elements_data
 from rxnpy.chemical.element import Element
 from rxnpy.utilities.decorators import freeze_class
+
+prop_conv = [
+    ["atomic_mass", "g/mol"],
+    ["bp", "K"],
+    ["density", "g/L"],
+    ["mp", "K"],
+    ["molar_heat", "J/mol/K"],
+    ["electron_affinity", "kJ/mol"],
+    ["ionization_energies", "kJ/mol"]
+]
+
+
+def element_values_to_quantities(elements: dict):
+    """ Adds units to element values. """
+    for element in elements.values():
+        for prop in prop_conv:
+            if prop[0] in element and element[prop[0]] is not None:
+                if isinstance(element[prop[0]], list):
+                    element[prop[0]] = [Q(f"{i}, {prop[1]}") for i in element[prop[0]]]
+                else:
+                    element[prop[0]] = Q(f"{element[prop[0]]}, {prop[1]}")
 
 
 @freeze_class
@@ -52,6 +74,7 @@ class PeriodicTable(Serializer):
         with open(elements_data, "r", encoding="utf-8") as f:
             text = f.read()
         elements = json.loads(text)
+        element_values_to_quantities(elements)
         for k in elements:
             setattr(self, elements[k]["name"].lower(), Element(**elements[k]))
             self.elements.append(getattr(self, elements[k]["name"].lower()))

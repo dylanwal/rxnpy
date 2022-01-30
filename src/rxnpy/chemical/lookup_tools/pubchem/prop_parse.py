@@ -11,6 +11,7 @@ from rxnpy.config.chemical import config_chemical
 from rxnpy.chemical.sub_objects.property import Prop
 from rxnpy.chemical.sub_objects.condition import Cond
 from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
+from rxnpy.utilities.errors import RangeError
 
 import unit_parse
 
@@ -35,7 +36,10 @@ def get_prop(data_dict: dict) -> list[Prop]:
     """ Main function to get all properties. """
     props = []
     for p in config_PubChem.pubchem_properties:
-        prop = get_prop_general(data_dict, p[0], p[1], p[2])
+        try:
+            prop = get_prop_general(data_dict, p[0], p[1], p[2])
+        except RangeError:
+            continue
         if isinstance(prop, Prop):
             props.append(prop)
         elif isinstance(prop, list):
@@ -89,10 +93,10 @@ def grab_prop_from_dict(data_dict: dict, prop_name) -> Union[None, str, list]:
     if isinstance(result, str):
         if isinstance(result2, str):
             return [result, result2]  # str, str
-        return result2.append(result)  # str, list
+        return [result] + result2  # str, list
 
     if isinstance(result2, str):
-        return result.append(result2)  # list, str
+        return result + [result2]  # list, str
     return result + result2  # list, list
 
 
@@ -185,7 +189,10 @@ def conditions_check(results: [Quantity, list[Quantity], list[list[Quantity]]], 
     if isinstance(results, Quantity):  # single
         return Prop(key=prop_name, value=results)
 
-    if isinstance(results, list):
+    if isinstance(results, (int, float)):  # single
+        return Prop(key=prop_name, value=Quantity(str(results)))
+
+    if not isinstance(results, list):
         return None
 
     if isinstance(results[0], Quantity):  # series

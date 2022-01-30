@@ -7,6 +7,7 @@ from difflib import get_close_matches
 from pint.errors import DimensionalityError
 
 from rxnpy import Quantity
+from rxnpy.utilities.errors import RangeError
 
 
 class SupportsKeyCheck(Protocol):
@@ -179,7 +180,7 @@ def _value_quantity_check(self, value: Quantity):
     else:
         mes = f"'Value' outside expected range for {self.key}. Expected: {range_}; Received: {value}"
         self._logger.error(mes)
-        raise
+        raise RangeError(mes)
 
 
 def _value_check_generic(self, value: Union[list, tuple]):

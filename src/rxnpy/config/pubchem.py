@@ -18,7 +18,7 @@ class ConfigPubChem:
             ["InChI", "inchi"],
             ["InChI Key", "inchi_key"],
             ["Canonical SMILES", "smiles"],
-            ["Molecular Formula", "mol_for"],
+            ["Molecular Formula", "mol_form"],
             ["CAS", "cas"]
         ]
 
@@ -53,7 +53,7 @@ class ConfigPubChem:
             ["LogKoa", "log_koa", True, None],
             ["pH", 'ph', True, None],
             ["Henrys Law Constant", "henry_constant", True, 'kilogram * meter ** 2 / mole / second ** 2'],
-            ["Optical Rotation", "optical_rot", True, None],
+            ["Optical Rotation", "optical_rot", True, "deg"],
             ['Ionization Potential', 'ionization_potential', True, None],
             ['Dissociation Constants', "dissociation_constants", None, None],
             ['Corrosivity', "corrosivity", None, None],
@@ -94,7 +94,8 @@ class ConfigPubChem:
             ["MM HG", "mmHg"],
             ["MG", "mg"],
             ["Â°", "degC"],
-            ["ºC", "degC"]
+            ["ºC", "degC"],
+            ["[0-9]{1,5} ?%", ""]
         ]
 
 

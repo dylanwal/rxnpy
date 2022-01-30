@@ -5,9 +5,10 @@ import pprint
 
 
 from rxnpy.config.pubchem import config_PubChem
-from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
 from rxnpy.chemical.chemical import Chemical
+from rxnpy.chemical.sub_objects.property import Prop
 from rxnpy.chemical.utils import calc_molar_mass
+from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
 from rxnpy.chemical.lookup_tools.pubchem.iden_parse import get_iden
 from rxnpy.chemical.lookup_tools.pubchem.prop_parse import get_prop
 
@@ -82,8 +83,8 @@ class PubChemChemical(Chemical):
         logger_look_up.debug(f"PubChem: cid_{self.iden.pubchem_cid} finish obtaining identifiers and properties.")
 
     def post_init(self):
-        if hasattr(self.iden, "molecular_formula"):
-            self.prop.add("molar_mass", calc_molar_mass(self.iden.molecular_formula))
+        if hasattr(self.iden, "mol_form"):
+            self.prop.add(Prop("molar_mass", calc_molar_mass(self.iden.mol_form)))
 
     def to_JSON(self, remove_none: bool = True, skip: set[str] = None) -> dict:
         if skip is None:
@@ -164,7 +165,7 @@ def local_run_file():
     """ Get material from website. """
     from pathlib import Path
     # path = (Path(__file__).parent / Path("data/cid_7501.json"))
-    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files\cid_11.json")
+    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files\cid_2710.json")
 
     json_data = get_data(path)
     material = PubChemChemical(raw_data=json_data)
