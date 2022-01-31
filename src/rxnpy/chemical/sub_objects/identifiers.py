@@ -37,7 +37,7 @@ class Iden(Serializer):
             cas: str = None,
             bigsmiles: str = None,
             smiles: str = None,
-            mol_for: Union[MolecularFormula, str] = None,
+            mol_form: Union[MolecularFormula, str] = None,
             pubchem_cid: int = None,
             inchi: str = None,
             inchi_key: str = None,
@@ -67,8 +67,8 @@ class Iden(Serializer):
         self._smiles = None
         self.smiles = smiles
 
-        self._mol_for = None
-        self.mol_for = mol_for
+        self._mol_form = None
+        self.mol_form = mol_form
 
         self._pubchem_cid = None
         self.pubchem_cid = pubchem_cid
@@ -84,8 +84,8 @@ class Iden(Serializer):
 
     def __repr__(self):
         text = f"{self.name}"
-        if self.mol_for is not None:
-            text += f" ({self.mol_for})"
+        if self.mol_form is not None:
+            text += f" ({self.mol_form})"
 
         return text
 
@@ -130,14 +130,14 @@ class Iden(Serializer):
         self._smiles = smiles
 
     @property
-    def mol_for(self):
-        return self._mol_for
+    def mol_form(self):
+        return self._mol_form
 
-    @mol_for.setter
-    def mol_for(self, mol_for):
-        if not isinstance(mol_for, MolecularFormula) and mol_for is not None:
-            mol_for = MolecularFormula(mol_for)
-        self._mol_for = mol_for
+    @mol_form.setter
+    def mol_form(self, mol_form):
+        if not isinstance(mol_form, MolecularFormula) and mol_form is not None:
+            mol_form = MolecularFormula(mol_form)
+        self._mol_form = mol_form
 
     @property
     def pubchem_cid(self):

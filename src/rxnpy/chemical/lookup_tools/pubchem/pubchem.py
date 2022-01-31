@@ -92,55 +92,9 @@ class PubChemChemical(Chemical):
         return super().to_JSON(remove_none, skip=skip)
 
 
-def get_files(path, pattern: str = "cid_*.json") -> list[str]:
-    import glob
-    import os
-
-    # Find all json files
-    file_list = []
-    os.chdir(path)
-    for files in glob.glob(pattern):
-        file_list.append(files)  # filename with extension
-
-    return file_list
-
-
-def get_data(file_path) -> dict:
-    encodings = ['utf-8', 'windows-1250', 'windows-1252', "latin-1"] #'utf-8'
-    for e in encodings:
-        try:
-            with open(file_path, "r", encoding=e) as f:
-                text = f.read()
-                json_data = json.loads(text)
-                break
-        except UnicodeDecodeError:
-            pass
-    else:
-        raise RuntimeError(f"No valid encoding found for '{file_path}'.")
-
-    logger_look_up.info(f"decoding {file_path} with: {e}")
-    return json_data
-
-
-def local_run_multi():
-    import time
-    from pathlib import Path
-    # path = (Path(__file__).parent / Path("data"))
-    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
-    file_list = get_files(path)
-
-    for file in file_list[100:300]:
-        json_data = get_data(file)
-        material = PubChemChemical(raw_data=json_data)
-        print(material)
-        material.pprint()
-        time.sleep(0.1)
-
-    print("done")
-
-
 def get_prop_keys():
     from pathlib import Path
+    from rxnpy.utilities.working_with_files import get_files, get_json
     path = (Path(__file__).parent / Path("data"))
     # path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
 
@@ -149,7 +103,7 @@ def get_prop_keys():
     props = {}
     for file in file_list:
         print(f"{file}")
-        json_data = get_data(file)
+        json_data = get_json(file)
         keys = PubChemChemical.get_prop_keys(json_data)
         for prop in keys:
             if prop not in props:
@@ -161,13 +115,34 @@ def get_prop_keys():
     print("done")
 
 
+def local_run_multi():
+    import time
+    from pathlib import Path
+    from rxnpy.utilities.working_with_files import get_files, get_json
+
+    # path = (Path(__file__).parent / Path("data"))
+    path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
+    file_list = get_files(path)
+
+    for file in file_list[100:300]:
+        json_data = get_json(file)
+        material = PubChemChemical(raw_data=json_data)
+        print(material)
+        material.pprint()
+        time.sleep(0.1)
+
+    print("done")
+
+
 def local_run_file():
     """ Get material from website. """
     from pathlib import Path
+    from rxnpy.utilities.working_with_files import get_json
+
     # path = (Path(__file__).parent / Path("data/cid_7501.json"))
     path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files\cid_2710.json")
 
-    json_data = get_data(path)
+    json_data = get_json(path)
     material = PubChemChemical(raw_data=json_data)
     material.pprint()
     json_ = material.to_JSON()

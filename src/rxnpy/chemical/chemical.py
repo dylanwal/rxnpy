@@ -18,7 +18,6 @@ class Chemical(Serializer):
                  iden: Iden,
                  prop: Union[list[Prop], Prop] = None,
                  ):
-
         self.iden = iden
         self.prop = ObjList(Prop, prop, _logger=self._logger)
 
@@ -29,8 +28,20 @@ class Chemical(Serializer):
 
     def pprint(self):
         dict_out = self.remove_none(self.dict_cleanup(self.as_dict()))
-        dict_out.pop("raw_data")
         return pprint.pprint(dict_out)
+
+    @staticmethod
+    def load(dict_: dict):
+        if "iden" not in dict_:
+            raise ValueError("'iden' must in dictionary.")
+        chemical = Chemical(iden=Iden(**dict_["iden"]))
+
+        if "prop" in dict_:
+            for prop in dict_["prop"]:
+                p = Prop.load(prop)
+                chemical.prop.add(p)
+
+        return chemical
 
 
 def local_run():

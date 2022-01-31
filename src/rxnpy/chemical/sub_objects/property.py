@@ -7,6 +7,7 @@ from dictpy import Serializer
 
 from rxnpy.utilities.decorators import freeze_class
 from rxnpy.utilities.reference_list import ObjList
+from rxnpy.config.quantity import Quantity
 from rxnpy.chemical.sub_objects.condition import Cond
 from rxnpy.chemical.sub_objects.logger import logger_chem
 
@@ -65,8 +66,8 @@ class Prop(Serializer):
         text += f"{self.key}: {self.value}"
         if self.uncer is not None:
             text += f"(+- {self.uncer})"
-        if self.method is not None:
-            text += f"; {self.method}"
+        if len(self.cond) > 0:
+            text += f" [{self.cond}]"
         return text
 
     @property
@@ -108,6 +109,27 @@ class Prop(Serializer):
     @cond.setter
     def cond(self, _):
         raise AttributeError("Use '.add()' or .remove() to modify.")
+
+    @staticmethod
+    def load(dict_: dict):
+        if "cond" in dict_:
+            cond = dict_.pop("cond")
+        else:
+            cond = None
+
+        if "value" in dict_:
+            try:
+                dict_["value"] = Quantity(dict_["value"])
+            except Exception:
+                pass
+
+        prop = Prop(**dict_)
+
+        if cond:
+            for con in cond:
+                prop.cond.add(Cond.load(con))
+
+        return prop
 
 
 def local_run():

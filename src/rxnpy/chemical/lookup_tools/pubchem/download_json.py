@@ -44,6 +44,7 @@ def download_from_pubchem(cid: int, path_save: Union[Path, str] = os.getcwd()):
     while flag:
         try:
             urlretrieve(url, (path_save / f"cid_{cid}.json").resolve())
+            logger_look_up.debug(f"PubChem: cid_{cid} downloaded.")
             flag = False
 
         except Exception as e:
@@ -53,8 +54,6 @@ def download_from_pubchem(cid: int, path_save: Union[Path, str] = os.getcwd()):
             if ii == 5:  # stop completely if it can't get the JSON
                 logger_look_up.error(f"PubChem: download of cid_{cid} failed due to too many failed tries.")
                 raise RuntimeError(e)
-
-    logger_look_up.debug(f"PubChem: cid_{cid} downloaded.")
 
 
 def batch_download_from_pubchem(cid_start: int, cid_end: int,

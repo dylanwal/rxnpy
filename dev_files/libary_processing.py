@@ -1,18 +1,12 @@
 import json
 import os
-import logging
 
-from rxnpy.chemical.lookup_tools.logger_lookup import logger_look_up
 from rxnpy.chemical import PubChemChemical
-from rxnpy.chemical.lookup_tools.pubchem.pubchem import get_files, get_data
-from unit_parse import logger
-
-# logger.setLevel(logging.ERROR)
-# logger_look_up.setLevel(logging.ERROR)
+from rxnpy.utilities.working_with_files import get_files, get_json
 
 
 def single_process(file):
-    json_data = get_data(file)
+    json_data = get_json(file)
     material = PubChemChemical(raw_data=json_data)
     json_ = material.to_JSON()
     with open(f"C://Users//nicep//Desktop//pubchem//clean//cid_{material.iden.pubchem_cid}.json",
@@ -25,7 +19,7 @@ def local_run():
     from pathlib import Path
 
     path = Path(r"C:\Users\nicep\Desktop\pubchem\json_files")
-    file_list = get_files(path)[1900:]
+    file_list = get_files(path)
 
     start = time.time()
 

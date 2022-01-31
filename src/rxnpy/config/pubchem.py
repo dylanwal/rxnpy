@@ -34,7 +34,7 @@ class ConfigPubChem:
             ["Stability/Shelf Life", "stability", False, None],
             ["Decomposition", "decomposition", False, None],
             ["Kovats Retention Index", "kovats_index", True, None],
-            ["Odor Threshold", "oder_threshold", True, "part_per_million"],
+            ["Odor Threshold", "odor_threshold", True, "part_per_million"],
             ["Density", "density", True, "kilogram / meter ** 3"],
             ["Boiling Point", "temp_boil", True, "kelvin"],
             ["Melting Point", "temp_melt", True, "kelvin"],

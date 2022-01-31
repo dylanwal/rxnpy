@@ -7,6 +7,7 @@ from dictpy import Serializer
 
 from rxnpy.utilities.decorators import freeze_class
 from rxnpy.utilities.validation import keys_check, value_check
+from rxnpy.config.quantity import Quantity
 from rxnpy.config.chemical import config_chemical
 from rxnpy.chemical.sub_objects.logger import logger_chem
 
@@ -76,6 +77,16 @@ class Cond(Serializer):
     @value_check
     def uncer(self, uncer):
         self._uncer = uncer
+
+    @staticmethod
+    def load(dict_: dict):
+        if "value" in dict_:
+            try:
+                dict_["value"] = Quantity(dict_["value"])
+            except Exception:
+                pass
+
+        return Cond(**dict_)
 
 
 def local_run():
